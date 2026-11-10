@@ -1,0 +1,69 @@
+# Checks every push: the website (Rust, Paquets, WebAssembly) on Linux, the iOS app
+# (Swift) on the Xcode 27 runner.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # Paquets and its packages are private repositories: Cargo fetches them through git,
+  # which asks GitHub's credentials to a helper reading the REPOS_TOKEN secret, a
+  # GitHub token that can read them. The token stays out of every URL.
+  REPOS_TOKEN: ${{ secrets.REPOS_TOKEN }}
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+  GIT_CONFIG_COUNT: ${{ secrets.REPOS_TOKEN != '' && 1 || 0 }}
+  GIT_CONFIG_KEY_0: credential.https://github.com.helper
+  GIT_CONFIG_VALUE_0: '!f() { test "$1" = get && echo username=x-access-token && echo "password=$REPOS_TOKEN"; }; f'
+  CARGO_TERM_COLOR: always
+
+jobs:
+  site:
+    name: Site (fmt, clippy, tests, WebAssembly)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: site
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - name: Clippy (browser, wasm32)
+        run: cargo clippy --lib --target wasm32-unknown-unknown -- -D warnings
+      - run: cargo test
+      - name: Browser bundle
+        run: |
+          cargo build --lib --target wasm32-unknown-unknown --profile wasm-release
+          version=$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"$/\1/p')
+          cargo install wasm-bindgen-cli --version "$version" --locked --bin wasm-bindgen
+          wasm-bindgen --target web --no-typescript --remove-name-section --remove-producers-section \
+            --out-dir pkg target/wasm32-unknown-unknown/wasm-release/duova_site.wasm
+          ls -l pkg
+
+  ios:
+    name: iOS (DuovaKit tests, app build)
+    runs-on: xcode-27
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v7
+      - run: xcodebuild -version && swift --version
+      - name: DuovaKit tests
+        run: swift test --package-path DuovaKit
+      - name: App build (simulator)
+        run: |
+          xcodebuild build \
+            -project Duova.xcodeproj \
+            -scheme Duova \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO

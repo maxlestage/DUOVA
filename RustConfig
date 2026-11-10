@@ -1,0 +1,8 @@
+# Heroku with the emk/rust buildpack: the website, built from site/.
+#
+# The buildpack sources this file and installs Rust; its own `cargo build` at the root is
+# skipped (there is no crate there): heroku-build.sh builds the server and the islands
+# (WebAssembly) once Rust is installed.
+VERSION=stable
+RUST_SKIP_BUILD=1
+trap 'status=$?; if [ "$status" -eq 0 ]; then ENV_DIR="$ENV_DIR" bash "$BUILD_DIR/heroku-build.sh" || exit 1; fi' EXIT

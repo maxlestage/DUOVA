@@ -1,0 +1,14 @@
+{
+  "name": "Duova",
+  "description": "Le site de Duova (« Qui doit quoi ? ») : un site Paquets en Rust, avec ses scènes 3D en WebGL 2 et son simulateur en WebAssembly.",
+  "keywords": ["rust", "paquets", "webassembly", "webgl", "ios"],
+  "stack": "heroku-26",
+  "buildpacks": [{ "url": "emk/rust" }],
+  "env": {
+    "REPOS_TOKEN": {
+      "description": "Un jeton GitHub qui peut lire les dépôts privés de Paquets (pour la compilation).",
+      "required": true
+    }
+  },
+  "success_url": "/"
+}

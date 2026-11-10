@@ -1,0 +1,61 @@
+[package]
+name = "duova-site"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lib]
+name = "duova_site"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "duova-site"
+path = "src/main.rs"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+paquets = { git = "https://github.com/maxlestage/Paquets" }
+tokio = { version = "1.54", features = ["macros", "rt-multi-thread"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+paquets = { git = "https://github.com/maxlestage/Paquets", default-features = false, features = ["client"] }
+wasm-bindgen = "=0.2.130"
+wasm-bindgen-futures = "0.4.80"
+js-sys = "0.3.107"
+web-sys = { version = "0.3.107", features = [
+  "AddEventListenerOptions",
+  "Clipboard",
+  "CssStyleDeclaration",
+  "Document",
+  "DomRect",
+  "DomTokenList",
+  "Element",
+  "EventTarget",
+  "HtmlElement",
+  "IntersectionObserver",
+  "IntersectionObserverEntry",
+  "IntersectionObserverInit",
+  "MediaQueryList",
+  "Navigator",
+  "NodeList",
+  "PointerEvent",
+  "Window",
+] }
+
+[dev-dependencies]
+tokio = { version = "1.54", features = ["macros", "rt-multi-thread"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+
+# The browser bundle: `cargo build --lib --target wasm32-unknown-unknown --profile wasm-release`.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+# Not `strip = true`: wasm-bindgen reads the `target_features` section.
+strip = false
