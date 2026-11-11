@@ -111,5 +111,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh workflow run pages.yml --ref master --repo "$GITHUB_REPOSITORY"
-          gh workflow run heroku.yml --ref master --repo "$GITHUB_REPOSITORY"
+          set -euo pipefail
+          # A workflow added by this merge takes a few seconds to be known by GitHub.
+          start() {
+            for attempt in 1 2 3 4 5 6; do
+              if gh workflow run "$1" --ref master --repo "$GITHUB_REPOSITORY"; then
+                echo "$1 started."
+                return 0
+              fi
+              sleep 10
+            done
+            echo "::error::$1 could not be started."
+            return 1
+          }
+          start pages.yml
+          start heroku.yml
