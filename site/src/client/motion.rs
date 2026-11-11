@@ -1,5 +1,5 @@
 //! The motion of the page: sections that appear as they come into view, cards that
-//! tilt in 3D under the pointer, objects that turn with the scroll, counters that count.
+//! follow the pointer, layers that move with the scroll (parallax), counters that count.
 //! Everything is driven by CSS variables; `prefers-reduced-motion` turns it off.
 
 use std::cell::Cell;
@@ -103,7 +103,7 @@ fn count(el: web_sys::HtmlElement) {
 }
 
 /// The scroll, as CSS variables: `--scroll` (0 → 1) on the page, `--p` (−1 → 1, 0 when
-/// centered) on every `[data-scroll3d]` element, and `is-scrolled` on the navigation.
+/// centered) on every `[data-parallax]` element, and `is-scrolled` on the navigation.
 fn scroll() {
     let pending = Rc::new(Cell::new(false));
     let update = || {
@@ -125,7 +125,7 @@ fn scroll() {
         for nav in all(".nav") {
             let _ = nav.class_list().toggle_with_force("is-scrolled", y > 24.0);
         }
-        for el in all("[data-scroll3d]") {
+        for el in all("[data-parallax]") {
             let rect = el.get_bounding_client_rect();
             let center = rect.top() + rect.height() / 2.0;
             let p =
@@ -149,7 +149,8 @@ fn scroll() {
     on(&window(), "resize", move |_e: web_sys::Event| update());
 }
 
-/// `[data-tilt]` cards lean towards the pointer, in 3D, with a light that follows it.
+/// `[data-tilt]` cards drift a few pixels towards the pointer (a 2D magnet), with a light
+/// that follows it.
 fn tilt() {
     for el in all("[data-tilt]") {
         let target = el.clone();
@@ -158,8 +159,8 @@ fn tilt() {
             let x = (f64::from(e.client_x()) - rect.left()) / rect.width().max(1.0);
             let y = (f64::from(e.client_y()) - rect.top()) / rect.height().max(1.0);
             let style = target.style();
-            let _ = style.set_property("--ry", &format!("{:.2}deg", (x - 0.5) * 14.0));
-            let _ = style.set_property("--rx", &format!("{:.2}deg", (0.5 - y) * 12.0));
+            let _ = style.set_property("--tx", &format!("{:.1}px", (x - 0.5) * 8.0));
+            let _ = style.set_property("--ty", &format!("{:.1}px", (y - 0.5) * 8.0 - 4.0));
             let _ = style.set_property("--mx", &format!("{:.1}%", x * 100.0));
             let _ = style.set_property("--my", &format!("{:.1}%", y * 100.0));
             let _ = target.class_list().add_1("is-tilting");
@@ -167,8 +168,8 @@ fn tilt() {
         let target = el.clone();
         on(&el, "pointerleave", move |_e: web_sys::PointerEvent| {
             let style = target.style();
-            let _ = style.set_property("--ry", "0deg");
-            let _ = style.set_property("--rx", "0deg");
+            let _ = style.set_property("--tx", "0px");
+            let _ = style.set_property("--ty", "0px");
             let _ = target.class_list().remove_1("is-tilting");
         });
     }

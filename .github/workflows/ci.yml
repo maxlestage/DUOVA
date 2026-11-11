@@ -1,5 +1,8 @@
 # Checks every push: the website (Rust, Paquets, WebAssembly) on Linux, the iOS app
-# (Swift) on the Xcode 27 runner.
+# (Swift) on the Xcode 27 runner. When everything is green, the branch is merged into
+# master automatically (except master itself and branches named wip/...), then master is
+# deployed: GitHub Pages (pages.yml) and Heroku (heroku.yml, when configured). A push made
+# by a workflow starts no other workflow, so the deployments are started explicitly.
 
 name: CI
 
@@ -48,6 +51,10 @@ jobs:
           wasm-bindgen --target web --no-typescript --remove-name-section --remove-producers-section \
             --out-dir pkg target/wasm32-unknown-unknown/wasm-release/duova_site.wasm
           ls -l pkg
+      - name: Static export (GitHub Pages)
+        run: |
+          BASE_PATH=/${{ github.event.repository.name }} cargo run --release -- export dist
+          test -f dist/index.html && test -f dist/404.html && test -f dist/pkg/duova_site_bg.wasm
 
   ios:
     name: iOS (DuovaKit tests, app build)
@@ -67,3 +74,42 @@ jobs:
             -scheme Duova \
             -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO
+
+  merge:
+    name: Merge into master
+    needs: [site, ios]
+    if: >-
+      github.event_name == 'push' && github.ref_name != 'master' &&
+      !startsWith(github.ref_name, 'wip/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    concurrency:
+      group: merge-into-master
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Merge ${{ github.ref_name }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git merge-base --is-ancestor "$SHA" HEAD; then
+            echo "$BRANCH is already in master."
+            exit 0
+          fi
+          git merge --no-ff --no-edit "$SHA" -m "Merge branch '$BRANCH' into master (auto-merge)"
+          git push origin HEAD:master
+      - name: Deploy master
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run pages.yml --ref master --repo "$GITHUB_REPOSITORY"
+          gh workflow run heroku.yml --ref master --repo "$GITHUB_REPOSITORY"
