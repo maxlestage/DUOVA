@@ -1,0 +1,79 @@
+# Deploys the website to GitHub Pages: the static export of the Paquets app (pages rendered
+# by the server itself, the 2D scenes and the simulator in WebAssembly), behind the path
+# of the repository (/DUOVA) or on the custom domain set in the Pages settings.
+#
+# Setup, once: Settings → Pages → Build and deployment → Source: GitHub Actions.
+# Started by a push to master, after every automatic merge (ci.yml), and by hand:
+# Actions → Deploy to GitHub Pages → Run workflow (GitHub app included).
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Paquets and its packages are private repositories (see ci.yml).
+  REPOS_TOKEN: ${{ secrets.REPOS_TOKEN }}
+  CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+  GIT_CONFIG_COUNT: ${{ secrets.REPOS_TOKEN != '' && 1 || 0 }}
+  GIT_CONFIG_KEY_0: credential.https://github.com.helper
+  GIT_CONFIG_VALUE_0: '!f() { test "$1" = get && echo username=x-access-token && echo "password=$REPOS_TOKEN"; }; f'
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: site
+      - id: pages
+        uses: actions/configure-pages@v6
+      - name: Browser bundle (WebAssembly)
+        run: |
+          cargo build --lib --target wasm32-unknown-unknown --profile wasm-release
+          version=$(grep -A1 '^name = "wasm-bindgen"$' Cargo.lock | sed -n 's/^version = "\(.*\)"$/\1/p')
+          cargo install wasm-bindgen-cli --version "$version" --locked --bin wasm-bindgen
+          wasm-bindgen --target web --no-typescript --remove-name-section --remove-producers-section \
+            --out-dir pkg target/wasm32-unknown-unknown/wasm-release/duova_site.wasm
+      - name: Static export
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: cargo run --release -- export dist
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

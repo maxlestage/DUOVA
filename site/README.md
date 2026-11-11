@@ -9,7 +9,8 @@ le lancer et le déployer.
 |---|---|
 | Calcul (centimes, parts, soldes, virements, récap) | `src/split.rs` (serveur et navigateur) |
 | Îlots : scène des pièces, scène des virements, simulateur | `src/islands.rs` (serveur et navigateur) |
-| Bundle du navigateur : 3D WebGL 2, animations de la page | `src/client/` (wasm32) |
+| Bundle du navigateur : scènes Canvas 2D, animations de la page | `src/client/` (wasm32) |
 | Serveur, pages, SEO | `src/server/` (natif) |
-| Styles, icône, image Open Graph | `public/` (servi à `/`) |
+| Export statique pour GitHub Pages | `src/server/export.rs` (`cargo run --release -- export dist`) |
+| Styles, icônes, image Open Graph | `public/` (servi à `/`) |
 | Tests de toutes les routes | `tests/site.rs` |

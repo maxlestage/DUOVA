@@ -2,6 +2,7 @@
 //! "not found" page. Static files come from `public/` and the browser bundle from
 //! `pkg/`, both found by Paquets in the current directory.
 
+pub mod export;
 pub mod pages;
 
 use std::io;
@@ -134,7 +135,10 @@ pub fn app(site: Arc<Site>) -> App {
             .start_url("/")
             .theme_color("#0b0916")
             .background_color("#0b0916")
-            .categories(["finance", "productivity"]),
+            .categories(["finance", "productivity"])
+            .icon("/assets/icon-192.png", "192x192", "image/png")
+            .icon("/assets/icon-512.png", "512x512", "image/png")
+            .maskable_icon("/assets/icon-maskable-512.png", "512x512", "image/png"),
     );
     let fallback = site.clone();
     app.fallback(move |req: Request| {

@@ -25,12 +25,15 @@ wasm-bindgen-futures = "0.4.80"
 js-sys = "0.3.107"
 web-sys = { version = "0.3.107", features = [
   "AddEventListenerOptions",
+  "CanvasGradient",
+  "CanvasRenderingContext2d",
   "Clipboard",
   "CssStyleDeclaration",
   "Document",
   "DomRect",
   "DomTokenList",
   "Element",
+  "HtmlCanvasElement",
   "EventTarget",
   "HtmlElement",
   "IntersectionObserver",

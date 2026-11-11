@@ -1,5 +1,6 @@
-//! The browser bundle: hydrates the islands, starts the 3D scenes and the page motion.
+//! The browser bundle: hydrates the islands, starts the 2D scenes and the page motion.
 
+pub mod canvas;
 pub mod coins;
 pub mod flow;
 pub mod motion;
@@ -92,7 +93,7 @@ pub fn all(selector: &str) -> Vec<web_sys::HtmlElement> {
 }
 
 /// A flag that says whether `element` is on screen, kept up to date by an
-/// `IntersectionObserver`: the 3D scenes draw nothing while they are scrolled away.
+/// `IntersectionObserver`: the 2D scenes draw nothing while they are scrolled away.
 pub fn visibility(element: &web_sys::Element) -> Rc<Cell<bool>> {
     let visible = Rc::new(Cell::new(true));
     let flag = visible.clone();

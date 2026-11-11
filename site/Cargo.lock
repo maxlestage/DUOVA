@@ -964,7 +964,7 @@ dependencies = [
 [[package]]
 name = "paquets"
 version = "0.3.2"
-source = "git+https://github.com/maxlestage/Paquets#3fc5e4fb667d3a5e78e81d2a88bbf9dc5286dd14"
+source = "git+https://github.com/maxlestage/Paquets#16dbf5aa70fb3e3aac2ea7e9a54b17a739b87f55"
 dependencies = [
  "active",
  "hmac",
@@ -982,7 +982,7 @@ dependencies = [
 [[package]]
 name = "paquets-macros"
 version = "0.3.2"
-source = "git+https://github.com/maxlestage/Paquets#3fc5e4fb667d3a5e78e81d2a88bbf9dc5286dd14"
+source = "git+https://github.com/maxlestage/Paquets#16dbf5aa70fb3e3aac2ea7e9a54b17a739b87f55"
 dependencies = [
  "proc-macro2",
  "quote",

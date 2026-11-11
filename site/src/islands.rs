@@ -9,9 +9,10 @@ use crate::split::{self, Expense, Member};
 pub const ISLANDS: [(&str, paquets::active::IslandFn); 3] =
     [("coins", coins), ("flow", flow), ("simulator", simulator)];
 
-// ----- 3D -------------------------------------------------------------------------------
+// ----- 2D scenes -------------------------------------------------------------------------
 
-/// The hero: coins and receipts falling in 3D, with real physics (a tap throws them up).
+/// The hero: coins, notes and receipts falling in 2D, bouncing and piling up (a tap throws
+/// them up, the pointer pushes them).
 pub fn coins(_props: &str) -> Node {
     canvas()
         .class("coins")
@@ -21,7 +22,7 @@ pub fn coins(_props: &str) -> Node {
 }
 
 /// "How it works": three people, and the coins that go from those who owe to the one
-/// who paid, along 3D arcs.
+/// who paid, along curves, in 2D.
 pub fn flow(_props: &str) -> Node {
     canvas()
         .class("flow__canvas")

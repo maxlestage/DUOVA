@@ -1,6 +1,6 @@
 //! The pages: the home page of Duova and the "not found" page, rendered on the server
-//! with their SEO tags. The 3D scenes and the simulator are islands; the rest is HTML
-//! and CSS (3D transforms, animations), driven by `client::motion` in the browser.
+//! with their SEO tags. The 2D scenes (canvas) and the simulator are islands; the rest is
+//! HTML and CSS (2D transforms, animations), driven by `client::motion` in the browser.
 
 use paquets::active::{Hydrate, island_with};
 use paquets::prelude::*;
@@ -48,7 +48,7 @@ fn layout(ctx: &Ctx, title: &str, description: &str, content: Element, index: bo
     } else {
         seo = seo.noindex(true);
     }
-    let head = r##"<meta name="color-scheme" content="dark"/><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/><link rel="apple-touch-icon" href="/assets/favicon.svg"/>"##;
+    let head = r##"<meta name="color-scheme" content="dark"/><link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png"/>"##;
     Page::new(title)
         .lang("fr")
         .description(description)
@@ -127,10 +127,9 @@ fn footer_bar() -> Element {
                     )
                     .child(p().text("Les comptes du groupe, au centime près.")),
             )
-            .child(
-                p().class("footer__made")
-                    .text("Site écrit en Rust avec Paquets · 3D en WebGL 2 · App iOS en Swift."),
-            )
+            .child(p().class("footer__made").text(
+                "Site écrit en Rust avec Paquets · Animations 2D en Canvas · App iOS en Swift.",
+            ))
             .child(p().class("footer__copy").text("© 2026 Duova")),
     )
 }
@@ -506,8 +505,8 @@ fn features() -> Element {
         )
 }
 
-/// The iPhone, in CSS 3D: a body with thickness, a screen showing the app, turning
-/// with the scroll.
+/// The iPhone, flat: a screen showing the app, chips and rings around it that move at
+/// different speeds with the scroll (parallax).
 fn iphone() -> Element {
     let screen = div()
         .class("app")
@@ -542,16 +541,14 @@ fn iphone() -> Element {
                 .child(
                     div()
                         .class("iphone__stage")
-                        .attr("data-scroll3d", "")
+                        .attr("data-parallax", "")
                         .attr("aria-hidden", "true")
+                        .child(div().class("iphone__halo"))
                         .child(div().class("iphone__shadow"))
                         .child(
                             div()
                                 .class("phone")
-                                .child(div().class("phone__side phone__side--right"))
-                                .child(div().class("phone__side phone__side--left"))
-                                .child(div().class("phone__back"))
-                                .child(div().class("phone__front").child(screen))
+                                .child(screen)
                                 .child(div().class("phone__glare")),
                         )
                         .child(div().class("orbit orbit--a").child(span().class("chip").text("+60,00 €")))
@@ -640,12 +637,7 @@ fn faq() -> Element {
 }
 
 fn download() -> Element {
-    let coin = div()
-        .class("coin3d")
-        .attr("aria-hidden", "true")
-        .child(div().class("coin3d__face coin3d__face--front").text("€"))
-        .children((0..10).map(|i| span().class("coin3d__edge").style(format!("--k:{i}"))))
-        .child(div().class("coin3d__face coin3d__face--back").text("D"));
+    let coin = div().class("coin2d").attr("aria-hidden", "true").text("€");
     section()
         .class("section download")
         .id("telecharger")

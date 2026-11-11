@@ -27,7 +27,7 @@ async fn the_home_page() {
         html.contains(r#"<meta name="viewport" content="width=device-width, initial-scale=1"/>"#)
     );
     assert!(html.contains("application/ld+json"));
-    // The three islands: the two 3D scenes and the simulator.
+    // The three islands: the two 2D scenes and the simulator.
     for name in ["coins", "flow", "simulator"] {
         assert!(
             html.contains(&format!(r#"data-island="{name}""#)),
@@ -92,4 +92,59 @@ fn the_stylesheet_never_scrolls_sideways() {
     );
     // Motion can be turned off.
     assert!(css.contains("@media (prefers-reduced-motion: reduce)"));
+}
+
+#[test]
+fn the_stylesheet_is_2d_only() {
+    let css = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/public/site.css"))
+        .expect("public/site.css");
+    for word in [
+        "perspective",
+        "rotateX",
+        "rotateY",
+        "translateZ",
+        "translate3d",
+        "rotate3d",
+        "scale3d",
+        "matrix3d",
+        "preserve-3d",
+        "backface-visibility",
+    ] {
+        assert!(!css.contains(word), "no 3D: {word}");
+    }
+}
+
+#[tokio::test]
+async fn the_static_export_for_github_pages() {
+    let out = std::env::temp_dir().join(format!("duova-export-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&out);
+    let files = duova_site::server::export::export(
+        &out,
+        "/DUOVA",
+        Some("https://maxlestage.github.io/DUOVA".into()),
+    )
+    .await
+    .expect("export");
+    assert!(files >= 10, "{files} files");
+    let read = |path: &str| std::fs::read_to_string(out.join(path)).expect(path);
+
+    let index = read("index.html");
+    assert!(index.contains(r#"href="/DUOVA/site.css?v="#));
+    assert!(index.contains(r#"href="/DUOVA/assets/favicon.svg""#));
+    assert!(
+        index.contains(r#"<link rel="canonical" href="https://maxlestage.github.io/DUOVA/"/>"#)
+    );
+    assert!(index.contains("https://maxlestage.github.io/DUOVA/assets/og-image.png"));
+    assert!(
+        !index.contains(r#"href="/site.css"#),
+        "a link without the base path"
+    );
+    assert!(read("404.html").contains("404"));
+    assert!(read("manifest.webmanifest").contains(r#""start_url":"/DUOVA/""#));
+    assert!(read("manifest.webmanifest").contains("/DUOVA/assets/icon-512.png"));
+    assert!(read("sitemap.xml").contains("<loc>https://maxlestage.github.io/DUOVA/</loc>"));
+    assert!(out.join(".nojekyll").is_file());
+    assert!(out.join("site.css").is_file());
+    assert!(out.join("assets/og-image.png").is_file());
+    let _ = std::fs::remove_dir_all(&out);
 }
