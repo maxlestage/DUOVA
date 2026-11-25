@@ -128,7 +128,7 @@ fn footer_bar() -> Element {
                     .child(p().text("Les comptes du groupe, au centime près.")),
             )
             .child(p().class("footer__made").text(
-                "Site écrit en Rust avec Paquets · Animations 2D en Canvas · App iOS en Swift.",
+                "Site écrit en Rust avec Paquets · Animations 2D en Canvas · App iOS en Swift et SQLite.",
             ))
             .child(p().class("footer__copy").text("© 2026 Duova")),
     )
@@ -471,8 +471,8 @@ fn features() -> Element {
             "feature--full",
             "📱",
             "Natif, en Swift",
-            "SwiftUI, Swift 6.4 et iOS 27 : rapide, accessible, en mode sombre comme en clair, \
-             avec le partage et les animations du système.",
+            "SwiftUI, Swift 6.4 et iOS 27, données dans SQLite : rapide, accessible, en mode \
+             sombre comme en clair, avec le partage et les animations du système.",
         ),
     ];
     section()
@@ -569,7 +569,7 @@ fn iphone() -> Element {
                             ul().class("checks")
                                 .child(li().text("SwiftUI et Observation, Swift 6.4"))
                                 .child(li().text("iOS 27, iPhone et iPad"))
-                                .child(li().text("Données enregistrées sur l'appareil"))
+                                .child(li().text("Données dans une base SQLite 3.54, sur l'appareil"))
                                 .child(li().text("Même algorithme que ce site, testé au centime"))
                                 .child(li().text("VoiceOver, Dynamic Type, mode sombre")),
                         ),
@@ -593,7 +593,8 @@ fn faq() -> Element {
         ),
         (
             "Où sont stockées mes données ?",
-            "Sur votre iPhone, et nulle part ailleurs : pas de compte, pas de serveur, pas de publicité.",
+            "Sur votre iPhone, dans une base SQLite protégée par le chiffrement d'iOS, et nulle part \
+             ailleurs : pas de compte, pas de serveur, pas de publicité.",
         ),
         (
             "Comment les centimes sont-ils répartis ?",
