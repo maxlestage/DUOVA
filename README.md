@@ -5,8 +5,8 @@ les dépenses, et Duova dit qui rembourse qui, en un minimum de virements.
 
 | Partie | Où | Technologies |
 |---|---|---|
-| Site de présentation | [`site/`](site/) | Rust, [Paquets](https://github.com/maxlestage/Paquets), WebAssembly, Canvas 2D |
-| App iPhone | [`ios/`](ios/) | Swift 6.4, SwiftUI, iOS 27, Xcode 27 |
+| Site de présentation | [`site/`](site/) | Rust 1.100, [Paquets](https://github.com/maxlestage/Paquets), WebAssembly, Canvas 2D |
+| App iPhone | [`ios/`](ios/) | Swift 6.4, SwiftUI, SQLite 3.54.1, iOS 27, Xcode 27 |
 
 Le même algorithme est écrit deux fois et testé des deux côtés, avec les mêmes cas :
 [`site/src/split.rs`](site/src/split.rs) (Rust, utilisé par le serveur et par le simulateur
@@ -92,11 +92,45 @@ Ouvrir `ios/Duova.xcodeproj` avec Xcode 27, choisir son équipe dans *Signing &
 Capabilities*, puis lancer. Le projet utilise des dossiers synchronisés : un fichier
 ajouté dans `ios/Duova/` fait partie de l'app.
 
-- `DuovaKit` (paquet Swift) : modèles, centimes, parts, soldes, virements, récap ; testé
-  avec Swift Testing (`swift test --package-path ios/DuovaKit`).
+- `DuovaKit` (paquet Swift) : modèles, centimes, parts, soldes, virements, récap, et la
+  base SQLite ; testé avec Swift Testing (`swift test --package-path ios/DuovaKit`, sur
+  macOS comme sur Linux).
+- `CSQLite` : SQLite 3.54.1, l'amalgamation officielle de sqlite.org compilée dans l'app
+  (empreinte SHA3-256 vérifiée, voir [`Sources/CSQLite`](ios/DuovaKit/Sources/CSQLite)) :
+  la même version récente sur chaque iPhone, quelle que soit la version d'iOS.
+  `./update.sh` y passe à la dernière version publiée.
 - `Duova` (app SwiftUI) : liste des groupes, détail d'un groupe (total, barres de soldes,
   remboursements, dépenses, membres), formulaire de dépense avec la part de chacun en
-  direct, partage du récap avec la feuille de partage d'iOS. Les données sont enregistrées
-  en JSON sur l'appareil, protégées par le chiffrement d'iOS.
+  direct, partage du récap avec la feuille de partage d'iOS.
+
+Les données sont dans une base SQLite sur l'appareil (`Application Support/Duova/duova.sqlite`,
+journal WAL), protégée par le chiffrement d'iOS. Une table par sorte de chose, liées par des
+clés étrangères :
+
+| Table | Colonnes |
+|---|---|
+| `groups` | `id`, `name`, `emoji`, `created_at` |
+| `members` | `id`, `group_id` → `groups`, `name` |
+| `expenses` | `id`, `group_id` → `groups`, `title`, `amount` (centimes, `> 0`), `paid_by` → `members`, `date` |
+| `expense_participants` | `expense_id` → `expenses`, `member_id` → `members`, `position` |
+
+Supprimer un groupe supprime ses membres et ses dépenses ; un membre qui a payé ou partage
+une dépense ne peut pas être supprimé (la base le refuse aussi). Le schéma est versionné
+(`PRAGMA user_version`). Les groupes du fichier JSON de la première version y sont
+importés au premier lancement.
 
 La CI construit l'app et lance les tests sur le runner `xcode-27` de GitHub Actions.
+
+## Versions
+
+Relevées sur le site officiel de chacun, le 25 novembre 2026 :
+
+| Outil | Version | Source |
+|---|---|---|
+| Rust | 1.100.0 | [rust-lang.org](https://www.rust-lang.org/) (canal stable) |
+| wasm-bindgen | 0.2.130 | [crates.io](https://crates.io/crates/wasm-bindgen) |
+| Paquets | 0.3.11 | [github.com/maxlestage/Paquets](https://github.com/maxlestage/Paquets) |
+| Swift | 6.4.3 | [swift.org](https://www.swift.org/install/) |
+| Xcode | 27.2 | [developer.apple.com](https://developer.apple.com/news/releases/) |
+| iOS | 27.2.1 | [developer.apple.com](https://developer.apple.com/news/releases/) |
+| SQLite | 3.54.1 | [sqlite.org](https://www.sqlite.org/download.html) |

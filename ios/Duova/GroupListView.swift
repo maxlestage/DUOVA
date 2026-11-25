@@ -74,6 +74,17 @@ struct GroupListView: View {
                 }
             }
         }
+        .alert(
+            "Enregistrement impossible",
+            isPresented: Binding(
+                get: { store.lastError != nil },
+                set: { if !$0 { store.lastError = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) { store.lastError = nil }
+        } message: {
+            Text(store.lastError ?? "")
+        }
     }
 }
 
@@ -105,5 +116,5 @@ private struct GroupRow: View {
 
 #Preview {
     GroupListView()
-        .environment(GroupStore(url: URL.temporaryDirectory.appending(path: "preview.json")))
+        .environment(GroupStore.preview([.example]))
 }
